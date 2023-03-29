@@ -1,6 +1,6 @@
 {
-  "version": "0.3.1",
-  "name": "nat-api",
+  "version": "0.3.3",
+  "name": "@motrix/nat-api",
   "description": "Port mapping with UPnP and NAT-PMP",
   "main": "index.js",
   "scripts": {
@@ -10,10 +10,10 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "async": "^3.2.0",
-    "debug": "^4.2.0",
-    "default-gateway": "^6.0.2",
-    "request": "^2.88.2",
+    "async": "^3.2.4",
+    "debug": "^4.3.4",
+    "default-gateway": "^6.0.3",
+    "node-fetch": "^2.6.9",
     "unordered-array-remove": "^1.0.2",
     "xml2js": "^0.1.0"
   },
