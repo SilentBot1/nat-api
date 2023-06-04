@@ -295,12 +295,20 @@ class NatAPI {
       throw err
     }, 1000)
 
-    await this._pmpClient.portMapping({
-      public: opts.publicPort,
-      private: opts.privatePort,
-      type: opts.protocol,
-      ttl: opts.ttl
-    })
+    try {
+      await this._pmpClient.portMapping({
+        public: opts.publicPort,
+        private: opts.privatePort,
+        type: opts.protocol,
+        ttl: opts.ttl
+      })
+    } catch (err) {
+      if (timeouted) return
+      clearTimeout(pmpTimeout)
+      this._pmpClient.close()
+      debug('Error mapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
+      throw err
+    }
 
     if (timeouted) return
     clearTimeout(pmpTimeout)
