@@ -140,16 +140,12 @@ class NatAPI {
 
     // Unmap all ports
     const openPortsCopy = Object.assign([], this._openPorts)
-    let numPorts = openPortsCopy.length
-    if (numPorts === 0) return await continueDestroy()
 
-    return await Promise.all(openPortsCopy.map(async (openPort) => {
+    for (const openPort of openPortsCopy) {
       await this.unmap(openPort)
-      numPorts--
-      if (numPorts === 0) {
-        await continueDestroy()
-      }
-    }))
+    }
+
+    await continueDestroy()
   }
 
   _validateInput (publicPort, privatePort) {
@@ -341,7 +337,7 @@ class NatAPI {
     debug('Port %d:%d for protocol %s unmapped on router using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
   }
 
-  async _pmpUnmap (opts, cb) {
+  async _pmpUnmap (opts) {
     debug('Unmapping public port %d to private port %d by %s using NAT-PMP', opts.publicPort, opts.privatePort, opts.protocol)
 
     // If we come from a timeouted (or error) request, we need to reconnect
