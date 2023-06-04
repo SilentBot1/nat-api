@@ -293,7 +293,7 @@ class NatAPI {
       const err = new Error('timeout')
       debug('Error mapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
       throw err
-    }, 250)
+    }, 1000)
 
     await this._pmpClient.portMapping({
       public: opts.publicPort,
@@ -352,7 +352,7 @@ class NatAPI {
       const err = new Error('timeout')
       debug('Error unmapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
       throw err
-    }, 250)
+    }, 1000)
 
     try {
       await this._pmpClient.portUnmapping({
