@@ -1,14 +1,28 @@
 const NatAPI = require('../')
 
-const client = new NatAPI()
-
 const port = 6690
 
-client.map({ publicPort: port, privatePort: port, protocol: 'UDP' }, function (err) {
-  if (err) return console.log(err)
-  console.log('Port ' + port + ' mapped to ' + port + ' (TCP)')
+const enablePMP = [true, false]
+const protocols = ['TCP', 'UDP']
 
-  client.destroy(function () {
-    console.log('NatAPI client destroyed')
-  })
-})
+const test = async (protocol, opts) => {
+  const client = new NatAPI({ enablePMP: opts.enablePMP })
+
+  const options = { publicPort: port, privatePort: port, protocol }
+  await client.map(options)
+  console.log(`Port ${port} mapped to ${port} ${protocol} via ${opts.enablePMP ? 'PMP' : 'UPnP'}`)
+  await client.unmap(options)
+  console.log(`Port ${port} unmapped from ${port} ${protocol} via ${opts.enablePMP ? 'PMP' : 'UPnP'}`)
+
+  await client.destroy()
+}
+
+const main = async () => {
+  for (const usePMP of enablePMP) {
+    for (const protocol of protocols) {
+      await test(protocol, { enablePMP: usePMP })
+    }
+  }
+}
+
+main().catch(console.error)
