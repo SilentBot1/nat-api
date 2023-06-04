@@ -140,11 +140,11 @@ Destroy the client. Unmaps all the ports open with `nat-api` and cleans up large
 
 MIT. Copyright (c) [Brad Marsden](https://github.com/silentbot1)
 
-[nat-api-ni]: https://img.shields.io/npm/v/nat-api.svg
-[nat-api-nu]: https://npmjs.org/package/nat-api
+[nat-api-ni]: https://img.shields.io/npm/v/@silentbot1/nat-api.svg
+[nat-api-nu]: https://npmjs.org/package/@silentbot1/nat-api
 [nat-api-bi]: https://img.shields.io/github/actions/workflow/status/silentbot1/nat-api/ci.yml?branch=master
-[nat-api-bu]: https://github.com/alxhotel/nat-api/actions
-[nat-api-di]: https://img.shields.io/librariesio/release/npm/nat-api
-[nat-api-du]: https://libraries.io/npm/nat-api
+[nat-api-bu]: https://github.com/silentbot1/nat-api/actions
+[nat-api-di]: https://img.shields.io/librariesio/release/npm/@silentbot1/nat-api
+[nat-api-du]: https://libraries.io/npm/@silentbot1%2Fnat-api
 [standard-image]: https://img.shields.io/badge/code_style-standard-brightgreen.svg
 [standard-url]: https://standardjs.com
