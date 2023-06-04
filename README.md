@@ -88,48 +88,44 @@ If `opts` is specified, then the default options (shown below) will be overridde
 
 If `gateway` is not set, then `nat-api` will get the default gateway based on the current network interface.
 
-### `client.map(port, [callback])`
+### `client.map(port): Promise<void>`
 * `port`: Public and private ports
-* `callback`
 
-This method will use `port` por mapping the public port to the same private port.
+This method will use `port` for mapping the public port to the same private port.
 
 It uses the default TTL and creates a map for UDP and TCP.
 
-### `client.map(publicPort, privatePort, [callback])`
+### `client.map(publicPort, privatePort): Promise<void>`
 * `publicPort`: Public port
 * `privatePort`: Private port
-* `callback`
 
-This is another quick way of mapping `publciPort` to `privatePort` with any protocol (UDP and TCP).
+This is another quick way of mapping `publciPort` to `privatePort` for both UDP and TCP.
 
-### `client.map(opts, [callback])`
+### `client.map(opts): Promise<void>`
 * `opts`:
  - `publicPort`: Public port
  - `privatePort`: Private port
  - `protocol`: Port protocol (`UDP`, `TCP` or `null` for both)
  - `ttl`: Overwrite the default TTL in seconds.
  - `description`: Description of the port mapping
-* `callback`
 
-### `client.unmap(port, [callback])`
+### `client.unmap(port): Promise<void>`
 
 Unmap any port that has the public port or private port equal to `port`.
 
-### `client.unmap(publicPort, privatePort, [callback])`
+### `client.unmap(publicPort, privatePort): Promise<void>`
 
 Unmap any port that has the public port or private port equal to `publicPort` and `privatePort`, respectively.
 
-### `client.unmap(opts, [callback])`
+### `client.unmap(opts): Promise<void>`
 
 Unmap any port that contains the parameters provided in `opts`.
 
-### `client.externalIp([callback])`
-* `callback(err, ip)`
+### `client.externalIp(): Promise<string>`
 
 Get the external IP address.
 
-### `client.destroy([callback])`
+### `client.destroy(): Promise<void>`
 
 Destroy the client. Unmaps all the ports open with `nat-api` and cleans up large data structure resources.
 
