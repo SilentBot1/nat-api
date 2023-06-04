@@ -12,7 +12,7 @@ Fast port mapping with **UPnP** and **NAT-PMP** in NodeJS.
 **Required: NodeJS >= 10**
 
 ```sh
-npm install nat-api
+npm install @silentbot1/nat-api
 ```
 
 ## Usage
@@ -20,40 +20,53 @@ npm install nat-api
 ```js
 const NatAPI = require('nat-api')
 
+// For NAT-UPNP only, use:
 const client = new NatAPI()
 
+// For NAT-PMP + NAT-UPNP, use:
+const client = new NatAPI({ enablePMP: true })
+
 // Map public port 1000 to private port 1000 with UDP and TCP
-client.map(1000, function (err) {
-  if (err) return console.log('Error', err)
+client.map(1000).then(() => {
   console.log('Port mapped!')
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Map public port 2000 to private port 3000 with UDP and TCP
-client.map(2000, 3000, function (err) {
-  if (err) return console.log('Error', err)
+client.map(2000, 3000).then(() => {
   console.log('Port mapped!')
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Map public port 4000 to private port 5000 with only UDP
-client.map({ publicPort: 4000, privatePort: 5000, ttl: 1800, protocol: 'UDP' }, function (err) {
-  if (err) return console.log('Error', err)
+client.map({ publicPort: 4000, privatePort: 5000, ttl: 1800, protocol: 'UDP' }).then(() => {
   console.log('Port mapped!')
+}).catch((err) =>{
+  return console.log('Error', err)
 })
 
 // Unmap port public and private port 1000 with UDP and TCP
-client.unmap(1000, function (err) {
-  if (err) return console.log('Error', err)
+client.unmap(1000).then(() => {
   console.log('Port unmapped!') 
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Get external IP
-client.externalIp(function(err, ip) {
-  if (err) return console.log('Error', err)
+client.externalIp().then((ip) => {
   console.log('External IP:', ip)
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Destroy object
-client.destroy()
+client.destroy().then((ip) => {
+  console.log('Client has been destroyed!')
+}).catch((err) => {
+  return console.log('Error', err)
+})
 ```
 
 ## API
