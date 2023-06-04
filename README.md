@@ -12,7 +12,7 @@ Fast port mapping with **UPnP** and **NAT-PMP** in NodeJS.
 **Required: NodeJS >= 10**
 
 ```sh
-npm install nat-api
+npm install @silentbot1/nat-api
 ```
 
 ## Usage
@@ -20,40 +20,53 @@ npm install nat-api
 ```js
 const NatAPI = require('nat-api')
 
+// For NAT-UPNP only, use:
 const client = new NatAPI()
 
+// For NAT-PMP + NAT-UPNP, use:
+const client = new NatAPI({ enablePMP: true })
+
 // Map public port 1000 to private port 1000 with UDP and TCP
-client.map(1000, function (err) {
-  if (err) return console.log('Error', err)
+client.map(1000).then(() => {
   console.log('Port mapped!')
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Map public port 2000 to private port 3000 with UDP and TCP
-client.map(2000, 3000, function (err) {
-  if (err) return console.log('Error', err)
+client.map(2000, 3000).then(() => {
   console.log('Port mapped!')
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Map public port 4000 to private port 5000 with only UDP
-client.map({ publicPort: 4000, privatePort: 5000, ttl: 1800, protocol: 'UDP' }, function (err) {
-  if (err) return console.log('Error', err)
+client.map({ publicPort: 4000, privatePort: 5000, ttl: 1800, protocol: 'UDP' }).then(() => {
   console.log('Port mapped!')
+}).catch((err) =>{
+  return console.log('Error', err)
 })
 
 // Unmap port public and private port 1000 with UDP and TCP
-client.unmap(1000, function (err) {
-  if (err) return console.log('Error', err)
+client.unmap(1000).then(() => {
   console.log('Port unmapped!') 
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Get external IP
-client.externalIp(function(err, ip) {
-  if (err) return console.log('Error', err)
+client.externalIp().then((ip) => {
   console.log('External IP:', ip)
+}).catch((err) => {
+  return console.log('Error', err)
 })
 
 // Destroy object
-client.destroy()
+client.destroy().then((ip) => {
+  console.log('Client has been destroyed!')
+}).catch((err) => {
+  return console.log('Error', err)
+})
 ```
 
 ## API
@@ -75,48 +88,44 @@ If `opts` is specified, then the default options (shown below) will be overridde
 
 If `gateway` is not set, then `nat-api` will get the default gateway based on the current network interface.
 
-### `client.map(port, [callback])`
+### `client.map(port): Promise<void>`
 * `port`: Public and private ports
-* `callback`
 
-This method will use `port` por mapping the public port to the same private port.
+This method will use `port` for mapping the public port to the same private port.
 
 It uses the default TTL and creates a map for UDP and TCP.
 
-### `client.map(publicPort, privatePort, [callback])`
+### `client.map(publicPort, privatePort): Promise<void>`
 * `publicPort`: Public port
 * `privatePort`: Private port
-* `callback`
 
-This is another quick way of mapping `publciPort` to `privatePort` with any protocol (UDP and TCP).
+This is another quick way of mapping `publciPort` to `privatePort` for both UDP and TCP.
 
-### `client.map(opts, [callback])`
+### `client.map(opts): Promise<void>`
 * `opts`:
  - `publicPort`: Public port
  - `privatePort`: Private port
  - `protocol`: Port protocol (`UDP`, `TCP` or `null` for both)
  - `ttl`: Overwrite the default TTL in seconds.
  - `description`: Description of the port mapping
-* `callback`
 
-### `client.unmap(port, [callback])`
+### `client.unmap(port): Promise<void>`
 
 Unmap any port that has the public port or private port equal to `port`.
 
-### `client.unmap(publicPort, privatePort, [callback])`
+### `client.unmap(publicPort, privatePort): Promise<void>`
 
 Unmap any port that has the public port or private port equal to `publicPort` and `privatePort`, respectively.
 
-### `client.unmap(opts, [callback])`
+### `client.unmap(opts): Promise<void>`
 
 Unmap any port that contains the parameters provided in `opts`.
 
-### `client.externalIp([callback])`
-* `callback(err, ip)`
+### `client.externalIp(): Promise<string>`
 
 Get the external IP address.
 
-### `client.destroy([callback])`
+### `client.destroy(): Promise<void>`
 
 Destroy the client. Unmaps all the ports open with `nat-api` and cleans up large data structure resources.
 
@@ -129,11 +138,11 @@ Destroy the client. Unmaps all the ports open with `nat-api` and cleans up large
 
 ## License
 
-MIT. Copyright (c) [Alex](https://github.com/alxhotel)
+MIT. Copyright (c) [Brad Marsden](https://github.com/silentbot1)
 
 [nat-api-ni]: https://img.shields.io/npm/v/nat-api.svg
 [nat-api-nu]: https://npmjs.org/package/nat-api
-[nat-api-bi]: https://img.shields.io/github/workflow/status/alxhotel/nat-api/ci/master
+[nat-api-bi]: https://img.shields.io/github/actions/workflow/status/silentbot1/nat-api/ci.yml?branch=master
 [nat-api-bu]: https://github.com/alxhotel/nat-api/actions
 [nat-api-di]: https://img.shields.io/librariesio/release/npm/nat-api
 [nat-api-du]: https://libraries.io/npm/nat-api
