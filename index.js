@@ -313,9 +313,6 @@ class NatAPI {
     if (timeouted) return
     clearTimeout(pmpTimeout)
 
-    // Always close socket
-    this._pmpClient.close()
-
     if (this.autoUpdate) {
       this._pmpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
         this._pmpMap.bind(this, opts, () => {}),
@@ -378,9 +375,6 @@ class NatAPI {
 
     if (timeouted) return
     clearTimeout(pmpTimeout)
-
-    // Always close socket
-    this._pmpClient.close()
 
     // Clear intervals
     const key = opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol
