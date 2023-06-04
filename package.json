@@ -1,6 +1,6 @@
 {
-  "version": "0.3.4",
-  "name": "@motrix/nat-api",
+  "version": "0.4.0",
+  "name": "@silentbot1/nat-api",
   "description": "Port mapping with UPnP and NAT-PMP",
   "main": "index.js",
   "scripts": {
@@ -20,19 +20,25 @@
   "devDependencies": {
     "standard": "^17.0.0"
   },
+  "contributors": [
+    {
+      "name": "Alex",
+      "email": "alxmorais8@msn.com"
+    }
+  ],
   "author": {
-    "name": "Alex",
-    "email": "alxmorais8@msn.com"
+    "name": "SilentBot1",
+    "email": "silentbot1@gmail.com"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alxhotel/nat-api.git"
+    "url": "git+https://github.com/silentbot1/nat-api.git"
   },
   "bugs": {
-    "url": "https://github.com/alxhotel/nat-api/issues"
+    "url": "https://github.com/silentbot1/nat-api/issues"
   },
-  "homepage": "https://github.com/alxhotel/nat-api#readme",
+  "homepage": "https://github.com/silentbot1/nat-api#readme",
   "keywords": [
     "nat",
     "api",
