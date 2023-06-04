@@ -142,7 +142,11 @@ class NatAPI {
     const openPortsCopy = Object.assign([], this._openPorts)
 
     for (const openPort of openPortsCopy) {
-      await this.unmap(openPort)
+      try {
+        await this.unmap(openPort)
+      } catch (e) {
+        debug('failed to unmap port public %d private %d protocol %s during destruction', openPort.publicPort, openPort.privatePort, openPort.protocol)
+      }
     }
 
     await continueDestroy()
