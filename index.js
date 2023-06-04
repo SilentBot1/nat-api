@@ -142,7 +142,11 @@ class NatAPI {
     const openPortsCopy = Object.assign([], this._openPorts)
 
     for (const openPort of openPortsCopy) {
-      await this.unmap(openPort)
+      try {
+        await this.unmap(openPort)
+      } catch (e) {
+        debug('failed to unmap port public %d private %d protocol %s during destruction', openPort.publicPort, openPort.privatePort, openPort.protocol)
+      }
     }
 
     await continueDestroy()
@@ -293,20 +297,25 @@ class NatAPI {
       const err = new Error('timeout')
       debug('Error mapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
       throw err
-    }, 250)
+    }, 1000)
 
-    await this._pmpClient.portMapping({
-      public: opts.publicPort,
-      private: opts.privatePort,
-      type: opts.protocol,
-      ttl: opts.ttl
-    })
+    try {
+      await this._pmpClient.portMapping({
+        public: opts.publicPort,
+        private: opts.privatePort,
+        type: opts.protocol,
+        ttl: opts.ttl
+      })
+    } catch (err) {
+      if (timeouted) return
+      clearTimeout(pmpTimeout)
+      this._pmpClient.close()
+      debug('Error mapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
+      throw err
+    }
 
     if (timeouted) return
     clearTimeout(pmpTimeout)
-
-    // Always close socket
-    this._pmpClient.close()
 
     if (this.autoUpdate) {
       this._pmpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
@@ -352,7 +361,7 @@ class NatAPI {
       const err = new Error('timeout')
       debug('Error unmapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
       throw err
-    }, 250)
+    }, 1000)
 
     try {
       await this._pmpClient.portUnmapping({
@@ -370,9 +379,6 @@ class NatAPI {
 
     if (timeouted) return
     clearTimeout(pmpTimeout)
-
-    // Always close socket
-    this._pmpClient.close()
 
     // Clear intervals
     const key = opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol
