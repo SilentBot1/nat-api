@@ -18,7 +18,7 @@ class NatAPI {
     this.ttl = (opts.ttl) ? Math.max(opts.ttl, 1200) : 7200
     this.description = opts.description || 'NatAPI'
     this.gateway = opts.gateway || null
-    this.autoUpdate = !!opts.autoUpdate || true
+    this.autoUpdate = opts.autoUpdate !== false
 
     // Refresh the mapping 10 minutes before the end of its lifetime
     this._timeout = (this.ttl - 600) * 1000
