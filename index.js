@@ -202,6 +202,7 @@ class NatAPI {
   }
 
   async _map (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         const pmpSuccess = await this._pmpMap(opts)
@@ -220,6 +221,7 @@ class NatAPI {
   }
 
   async _pmpIp () {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         const pmpTimeout = new Promise((resolve, reject) => {
@@ -245,6 +247,7 @@ class NatAPI {
   }
 
   async _upnpIp () {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._upnpClient) {
         const ip = await this._upnpClient.externalIp()
@@ -258,6 +261,7 @@ class NatAPI {
   }
 
   async externalIp () {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         debug('getting ip via NAT-PMP')
@@ -278,6 +282,7 @@ class NatAPI {
   }
 
   async _unmap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         const pmpSuccess = await this._pmpUnmap(opts)
@@ -300,6 +305,7 @@ class NatAPI {
   }
 
   async _upnpMap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug('Mapping public port %d to private port %d by %s using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
 
     try {
@@ -333,6 +339,7 @@ class NatAPI {
   }
 
   async _pmpMap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug(
       'Mapping public port %d to private port %d by %s using NAT-PMP',
       opts.publicPort,
@@ -400,6 +407,7 @@ class NatAPI {
   }
 
   async _upnpUnmap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug('Unmapping public port %d to private port %d by %s using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
 
     try {
@@ -431,6 +439,7 @@ class NatAPI {
   }
 
   async _pmpUnmap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug(
       'Unmapping public port %d to private port %d by %s using NAT-PMP',
       opts.publicPort,
