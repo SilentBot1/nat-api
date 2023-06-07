@@ -20,11 +20,8 @@ npm install @silentbot1/nat-api
 ```js
 const NatAPI = require('nat-api')
 
-// For NAT-UPNP only, use:
-const client = new NatAPI()
-
 // For NAT-PMP + NAT-UPNP, use:
-const client = new NatAPI({ enablePMP: true })
+const client = new NatAPI({ enablePMP: true, enableUPNP: true })
 
 // Map public port 1000 to private port 1000 with UDP and TCP
 client.map(1000).then(() => {
@@ -62,7 +59,7 @@ client.externalIp().then((ip) => {
 })
 
 // Destroy object
-client.destroy().then((ip) => {
+client.destroy().then(() => {
   console.log('Client has been destroyed!')
 }).catch((err) => {
   return console.log('Error', err)
@@ -82,7 +79,8 @@ If `opts` is specified, then the default options (shown below) will be overridde
   ttl: 1200, // Time to live of each port mapping in seconds (default: 1200)
   autoUpdate: true, // Refresh all the port mapping to keep them from expiring (default: true)
   gateway: '192.168.1.1', // Default gateway (default: null)
-  enablePMP: false // Enable PMP (default: false)
+  enablePMP: false // Enable PMP (default: true)
+  enableUPNP: false // Enable UPNP (default: true)
 }
 ```
 

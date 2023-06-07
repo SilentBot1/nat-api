@@ -28,7 +28,7 @@ class NatAPI {
     this._pmpIntervals = {}
 
     // Setup NAT-PMP Client
-    this.enablePMP = !!opts.enablePMP
+    this.enablePMP = opts.enablePMP !== false
     if (this.enablePMP) {
       try {
         // Lookup gateway IP
@@ -43,7 +43,7 @@ class NatAPI {
       this._pmpClient = null
     }
 
-    this.enableUPNP = !!opts.enableUPNP
+    this.enableUPNP = opts.enableUPNP !== false
     if (this.enableUPNP) {
       // Setup UPnP Client
       this._upnpClient = NatUPNP.createClient()
