@@ -322,9 +322,9 @@ class NatAPI {
 
     if (this.autoUpdate) {
       this._upnpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
-        this._upnpMap.bind(this, opts, () => {}),
+        this._upnpMap.bind(this, opts),
         this._timeout
-      )
+      ).unref?.()
     }
 
     debug('Port %d:%d for protocol %s mapped on router using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
@@ -380,13 +380,13 @@ class NatAPI {
       ] = setInterval(
         async () => {
           try {
-            await this._pmpMap(opts)
+            await this._pmpMap.bind(this, opts)
           } catch (err) {
             // Handle any errors here
           }
         },
         this._timeout
-      )
+      ).unref?.()
     }
 
     debug(
