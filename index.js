@@ -18,7 +18,7 @@ class NatAPI {
     this.ttl = (opts.ttl) ? Math.max(opts.ttl, 1200) : 7200
     this.description = opts.description || 'NatAPI'
     this.gateway = opts.gateway || null
-    this.autoUpdate = !!opts.autoUpdate || true
+    this.autoUpdate = opts.autoUpdate !== false
 
     // Refresh the mapping 10 minutes before the end of its lifetime
     this._timeout = (this.ttl - 600) * 1000
@@ -202,6 +202,7 @@ class NatAPI {
   }
 
   async _map (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         const pmpSuccess = await this._pmpMap(opts)
@@ -220,6 +221,7 @@ class NatAPI {
   }
 
   async _pmpIp () {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         const pmpTimeout = new Promise((resolve, reject) => {
@@ -245,6 +247,7 @@ class NatAPI {
   }
 
   async _upnpIp () {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._upnpClient) {
         const ip = await this._upnpClient.externalIp()
@@ -258,6 +261,7 @@ class NatAPI {
   }
 
   async externalIp () {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         debug('getting ip via NAT-PMP')
@@ -278,6 +282,7 @@ class NatAPI {
   }
 
   async _unmap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     try {
       if (this._pmpClient) {
         const pmpSuccess = await this._pmpUnmap(opts)
@@ -300,6 +305,7 @@ class NatAPI {
   }
 
   async _upnpMap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug('Mapping public port %d to private port %d by %s using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
 
     try {
@@ -322,9 +328,9 @@ class NatAPI {
 
     if (this.autoUpdate) {
       this._upnpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
-        this._upnpMap.bind(this, opts, () => {}),
+        this._upnpMap.bind(this, opts),
         this._timeout
-      )
+      ).unref?.()
     }
 
     debug('Port %d:%d for protocol %s mapped on router using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
@@ -333,6 +339,7 @@ class NatAPI {
   }
 
   async _pmpMap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug(
       'Mapping public port %d to private port %d by %s using NAT-PMP',
       opts.publicPort,
@@ -380,13 +387,13 @@ class NatAPI {
       ] = setInterval(
         async () => {
           try {
-            await this._pmpMap(opts)
+            await this._pmpMap.bind(this, opts)
           } catch (err) {
             // Handle any errors here
           }
         },
         this._timeout
-      )
+      ).unref?.()
     }
 
     debug(
@@ -400,6 +407,7 @@ class NatAPI {
   }
 
   async _upnpUnmap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug('Unmapping public port %d to private port %d by %s using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
 
     try {
@@ -431,6 +439,7 @@ class NatAPI {
   }
 
   async _pmpUnmap (opts) {
+    if (this._destroyed) throw new Error('client is destroyed')
     debug(
       'Unmapping public port %d to private port %d by %s using NAT-PMP',
       opts.publicPort,
@@ -474,6 +483,7 @@ class NatAPI {
         opts.privatePort,
         err.message
       )
+      return false
     }
 
     // Clear intervals
