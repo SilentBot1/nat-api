@@ -474,6 +474,7 @@ class NatAPI {
         opts.privatePort,
         err.message
       )
+      return false
     }
 
     // Clear intervals
