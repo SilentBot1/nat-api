@@ -27,9 +27,6 @@ class NatAPI {
     this._upnpIntervals = {}
     this._pmpIntervals = {}
 
-    // Setup UPnP Client
-    this._upnpClient = NatUPNP.createClient()
-
     // Setup NAT-PMP Client
     this.enablePMP = !!opts.enablePMP
     if (this.enablePMP) {
@@ -44,6 +41,14 @@ class NatAPI {
     } else {
       // Not necessary - but good for readability
       this._pmpClient = null
+    }
+
+    this.enableUPNP = !!opts.enableUPNP
+    if (this.enableUPNP) {
+      // Setup UPnP Client
+      this._upnpClient = NatUPNP.createClient()
+    } else {
+      this._upnpClient = null
     }
   }
 
@@ -64,23 +69,28 @@ class NatAPI {
 
     if (opts.protocol) {
       // UDP or TCP
-      await this._map(opts)
+      const response = await this._map(opts)
+      if (!response[0]) return false
       const newOpts = Object.assign({}, opts)
       this._openPorts.push(newOpts)
+      return true
     } else {
       // UDP & TCP
 
       // Map UDP
       const newOptsUDP = Object.assign({}, opts)
       newOptsUDP.protocol = 'UDP'
-      await this._map(newOptsUDP)
+      let response = await this._map(newOptsUDP)
+      if (!response[0]) return false
       this._openPorts.push(newOptsUDP)
 
       // Map TCP
       const newOptsTCP = Object.assign({}, opts)
       newOptsTCP.protocol = 'TCP'
-      await this._map(newOptsTCP)
+      response = await this._map(newOptsTCP)
+      if (!response[0]) return false
       this._openPorts.push(newOptsTCP)
+      return true
     }
   }
 
@@ -107,15 +117,19 @@ class NatAPI {
 
     if (opts.protocol) {
       // UDP or TCP
-      await this._unmap(opts)
+      const response = await this._unmap(opts)
+      return response[0]
     } else {
       // UDP & TCP
       const newOptsUDP = Object.assign({}, opts)
       newOptsUDP.protocol = 'UDP'
-      await this._unmap(newOptsUDP)
+      let response = await this._unmap(newOptsUDP)
+      if (!response[0]) return false
       const newOptsTCP = Object.assign({}, opts)
       newOptsTCP.protocol = 'TCP'
-      await this._unmap(newOptsTCP)
+      response = await this._unmap(newOptsTCP)
+      if (!response[0]) return false
+      return true
     }
   }
 
@@ -136,6 +150,8 @@ class NatAPI {
         debug('Close UPnP client')
         await this._upnpClient.destroy()
       }
+
+      return true
     }
 
     // Unmap all ports
@@ -149,7 +165,7 @@ class NatAPI {
       }
     }
 
-    await continueDestroy()
+    return await continueDestroy()
   }
 
   _validateInput (publicPort, privatePort) {
@@ -186,91 +202,123 @@ class NatAPI {
   }
 
   async _map (opts) {
-    const tryUPNP = async () => {
-      try {
-        await this._upnpMap(opts)
-      } catch (e) {
-        throw new Error('NAT-PMP and UPnP port mapping failed')
+    try {
+      if (this._pmpClient) {
+        const pmpSuccess = await this._pmpMap(opts)
+        if (pmpSuccess) return [true, null]
+        debug('NAT-PMP port mapping failed')
       }
+      if (this._upnpClient) {
+        const upnpSuccess = await this._upnpMap(opts)
+        if (upnpSuccess) return [true, null]
+        debug('NAT-UPNP port mapping failed')
+      }
+      return [false, new Error('no protocols succeeded')]
+    } catch (error) {
+      return [false, error]
     }
+  }
 
-    // Try NAT-PMP
-    if (this._pmpClient) {
-      try {
-        await this._pmpMap(opts)
-      } catch (e) {
-        if (this._destroyed) return
-        return await tryUPNP()
+  async _pmpIp () {
+    try {
+      if (this._pmpClient) {
+        const pmpTimeout = new Promise((resolve, reject) => {
+          setTimeout(() => {
+            this._pmpClient.close()
+            const err = new Error('timeout')
+            debug(
+              'Error getting external ip using NAT-PMP:',
+              err.message
+            )
+            reject(err)
+          }, 1000).unref?.()
+        })
+
+        const ip = await Promise.race([this._pmpClient.externalIp(), pmpTimeout])
+        if (ip) return ip
+        debug('NAT-PMP getting public ip failed')
       }
-    } else {
-      // Try UPnP
-      return await tryUPNP()
+      return ''
+    } catch (err) {
+      return ''
+    }
+  }
+
+  async _upnpIp () {
+    try {
+      if (this._upnpClient) {
+        const ip = await this._upnpClient.externalIp()
+        if (ip) return ip
+        debug('NAT-UPNP getting public ip failed')
+      }
+      return ''
+    } catch (err) {
+      return ''
     }
   }
 
   async externalIp () {
-    const tryUPNP = async () => {
-      const ip = await this._upnpClient.externalIp()
-      if (!ip) throw new Error('NAT-PMP and UPnP get external ip failed')
-      return ip
-    }
-
-    let ip
-
-    // Try NAT-PMP
-    if (this._pmpClient) {
-      try {
-        ip = await this._pmpClient.externalIp()
-      } catch (e) {}
-
-      if (ip) return ip
-      if (this._destroyed) return
-
-      // NAT-PMP failed, trying Upnp
-      try {
-        return await tryUPNP()
-      } catch (e) {
-        throw new Error('NAT-PMP and UPnP get external ip failed')
+    try {
+      if (this._pmpClient) {
+        debug('getting ip via NAT-PMP')
+        const ip = await this._pmpIp()
+        if (ip) return ip
+        debug('getting ip failed via NAT-PMP')
       }
-    } else {
-      // Try UPnP
-      return await tryUPNP()
+      if (this._upnpClient) {
+        debug('getting ip via NAT-UPNP')
+        const ip = await this._upnpIp()
+        if (ip) return ip
+        debug('getting public ip failed via NAT-UPNP')
+      }
+      return ''
+    } catch (err) {
+      return ''
     }
   }
 
   async _unmap (opts) {
-    const tryUPNP = async () => {
-      try {
-        await this._upnpUnmap(opts)
-      } catch (e) {
-        if (this._pmpClient) throw new Error('NAT-PMP and UPnP port unmapping failed')
-        else throw e
+    try {
+      if (this._pmpClient) {
+        const pmpSuccess = await this._pmpUnmap(opts)
+        if (pmpSuccess) {
+          return [true, null]
+        }
+        debug('NAT-PMP port unmapping failed')
       }
-    }
-
-    // Try NAT-PMP
-    if (this._pmpClient) {
-      try {
-        await this._pmpUnmap(opts)
-      } catch (e) {
-        return await tryUPNP()
+      if (this._upnpClient) {
+        const upmpSuccess = await this._upnpUnmap(opts)
+        if (upmpSuccess) {
+          return [true, null]
+        }
+        debug('NAT-UPNP port unmapping failed')
       }
-    } else {
-      // Try UPnP
-      await tryUPNP()
+      return [false, new Error('no protocols succeeded')]
+    } catch (error) {
+      return [false, error]
     }
   }
 
   async _upnpMap (opts) {
     debug('Mapping public port %d to private port %d by %s using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
 
-    await this._upnpClient.portMapping({
-      public: opts.publicPort,
-      private: opts.privatePort,
-      description: opts.description,
-      protocol: opts.protocol,
-      ttl: opts.ttl
-    })
+    try {
+      await this._upnpClient.portMapping({
+        public: opts.publicPort,
+        private: opts.privatePort,
+        description: opts.description,
+        protocol: opts.protocol,
+        ttl: opts.ttl
+      })
+    } catch (err) {
+      debug(
+        'Error unmapping port %d:%d using NAT-UPNP:',
+        opts.publicPort,
+        opts.privatePort,
+        err.message
+      )
+      return false
+    }
 
     if (this.autoUpdate) {
       this._upnpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
@@ -280,61 +328,95 @@ class NatAPI {
     }
 
     debug('Port %d:%d for protocol %s mapped on router using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
+
+    return true
   }
 
   async _pmpMap (opts) {
-    debug('Mapping public port %d to private port %d by %s using NAT-PMP', opts.publicPort, opts.privatePort, opts.protocol)
+    debug(
+      'Mapping public port %d to private port %d by %s using NAT-PMP',
+      opts.publicPort,
+      opts.privatePort,
+      opts.protocol
+    )
 
     // If we come from a timeouted (or error) request, we need to reconnect
     if (this._pmpClient && this._pmpClient.socket == null) {
       this._pmpClient = NatPMP.connect(this._pmpClient.gateway)
     }
 
-    let timeouted = false
-    const pmpTimeout = setTimeout(() => {
-      timeouted = true
-      this._pmpClient.close()
-      const err = new Error('timeout')
-      debug('Error mapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
-      throw err
-    }, 1000)
+    const pmpTimeout = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        this._pmpClient.close()
+        const err = new Error('timeout')
+        reject(err)
+      }, 1000).unref?.()
+    })
 
     try {
-      await this._pmpClient.portMapping({
-        public: opts.publicPort,
-        private: opts.privatePort,
-        type: opts.protocol,
-        ttl: opts.ttl
-      })
+      await Promise.race([
+        this._pmpClient.portMapping({
+          public: opts.publicPort,
+          private: opts.privatePort,
+          type: opts.protocol,
+          ttl: opts.ttl
+        }),
+        pmpTimeout
+      ])
     } catch (err) {
-      if (timeouted) return
-      clearTimeout(pmpTimeout)
       this._pmpClient.close()
-      debug('Error mapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
-      throw err
+      debug(
+        'Error mapping port %d:%d using NAT-PMP:',
+        opts.publicPort,
+        opts.privatePort,
+        err.message
+      )
+      return false
     }
 
-    if (timeouted) return
-    clearTimeout(pmpTimeout)
-
     if (this.autoUpdate) {
-      this._pmpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
-        this._pmpMap.bind(this, opts, () => {}),
+      this._pmpIntervals[
+        opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol
+      ] = setInterval(
+        async () => {
+          try {
+            await this._pmpMap(opts)
+          } catch (err) {
+            // Handle any errors here
+          }
+        },
         this._timeout
       )
     }
 
-    debug('Port %d:%d for protocol %s mapped on router using NAT-PMP', opts.publicPort, opts.privatePort, opts.protocol)
+    debug(
+      'Port %d:%d for protocol %s mapped on router using NAT-PMP',
+      opts.publicPort,
+      opts.privatePort,
+      opts.protocol
+    )
+
+    return true
   }
 
   async _upnpUnmap (opts) {
     debug('Unmapping public port %d to private port %d by %s using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
 
-    await this._upnpClient.portUnmapping({
-      public: opts.publicPort,
-      private: opts.privatePort,
-      protocol: opts.protocol
-    })
+    try {
+      await this._upnpClient.portUnmapping({
+        public: opts.publicPort,
+        private: opts.privatePort,
+        protocol: opts.protocol
+      })
+    } catch (err) {
+      debug(
+        'Error unmapping port %d:%d using NAT-UPNP:',
+        opts.publicPort,
+        opts.privatePort,
+        err.message
+      )
+      return false
+    }
 
     // Clear intervals
     const key = opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol
@@ -344,41 +426,55 @@ class NatAPI {
     }
 
     debug('Port %d:%d for protocol %s unmapped on router using UPnP', opts.publicPort, opts.privatePort, opts.protocol)
+
+    return true
   }
 
   async _pmpUnmap (opts) {
-    debug('Unmapping public port %d to private port %d by %s using NAT-PMP', opts.publicPort, opts.privatePort, opts.protocol)
+    debug(
+      'Unmapping public port %d to private port %d by %s using NAT-PMP',
+      opts.publicPort,
+      opts.privatePort,
+      opts.protocol
+    )
 
     // If we come from a timeouted (or error) request, we need to reconnect
     if (this._pmpClient && this._pmpClient.socket == null) {
       this._pmpClient = NatPMP.connect(this._pmpClient.gateway)
     }
 
-    let timeouted = false
-    const pmpTimeout = setTimeout(() => {
-      timeouted = true
-      this._pmpClient.close()
-      const err = new Error('timeout')
-      debug('Error unmapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
-      throw err
-    }, 1000)
+    const pmpTimeout = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        this._pmpClient.close()
+        const err = new Error('timeout')
+        debug(
+          'Error unmapping port %d:%d using NAT-PMP:',
+          opts.publicPort,
+          opts.privatePort,
+          err.message
+        )
+        reject(err)
+      }, 1000).unref?.()
+    })
 
     try {
-      await this._pmpClient.portUnmapping({
-        public: opts.publicPort,
-        private: opts.privatePort,
-        type: opts.protocol
-      })
+      await Promise.race([
+        this._pmpClient.portUnmapping({
+          public: opts.publicPort,
+          private: opts.privatePort,
+          type: opts.protocol
+        }),
+        pmpTimeout
+      ])
     } catch (err) {
-      if (timeouted) return
-      clearTimeout(pmpTimeout)
       this._pmpClient.close()
-      debug('Error unmapping port %d:%d using NAT-PMP:', opts.publicPort, opts.privatePort, err.message)
-      throw err
+      debug(
+        'Error unmapping port %d:%d using NAT-PMP:',
+        opts.publicPort,
+        opts.privatePort,
+        err.message
+      )
     }
-
-    if (timeouted) return
-    clearTimeout(pmpTimeout)
 
     // Clear intervals
     const key = opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol
@@ -387,7 +483,14 @@ class NatAPI {
       delete this._pmpIntervals[key]
     }
 
-    debug('Port %d:%d for protocol %s unmapped on router using NAT-PMP', opts.publicPort, opts.privatePort, opts.protocol)
+    debug(
+      'Port %d:%d for protocol %s unmapped on router using NAT-PMP',
+      opts.publicPort,
+      opts.privatePort,
+      opts.protocol
+    )
+
+    return true
   }
 
   _checkPort (publicPort, cb) {
