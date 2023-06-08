@@ -1,10 +1,12 @@
-const arrayRemove = require('unordered-array-remove')
-const { v4 } = require('default-gateway')
-const debug = require('debug')('nat-api')
-const NatUPNP = require('./lib/upnp/index.js')
-const NatPMP = require('./lib/pmp/index.js')
+import arrayRemove from 'unordered-array-remove'
+import { v4 } from 'default-gateway'
+import Debug from 'debug'
+import NatUPNP from './lib/upnp/index.js'
+import NatPMP from './lib/pmp/index.js'
 
-class NatAPI {
+const debug = Debug('nat-api')
+
+export default class NatAPI {
   /**
   * opts:
   *  - ttl
@@ -493,5 +495,3 @@ class NatAPI {
     // TOOD: check port
   }
 }
-
-module.exports = NatAPI

@@ -1,4 +1,4 @@
-const NatAPI = require('../')
+import NatAPI from '../index.js'
 
 const port = 6690
 
