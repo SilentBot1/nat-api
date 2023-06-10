@@ -3,6 +3,7 @@
   "name": "@silentbot1/nat-api",
   "description": "Port mapping with UPnP and NAT-PMP",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "standard"
   },
@@ -10,9 +11,9 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
+    "cross-fetch-ponyfill": "^1.0.3",
     "debug": "^4.3.4",
     "default-gateway": "^6.0.3",
-    "node-fetch": "^2.6.9",
     "unordered-array-remove": "^1.0.2",
     "xml2js": "^0.6.0"
   },

@@ -1,10 +1,12 @@
-const arrayRemove = require('unordered-array-remove')
-const defaultGateway = require('default-gateway')
-const debug = require('debug')('nat-api')
-const NatUPNP = require('./lib/upnp')
-const NatPMP = require('./lib/pmp')
+import arrayRemove from 'unordered-array-remove'
+import { v4 } from 'default-gateway'
+import Debug from 'debug'
+import NatUPNP from './lib/upnp/index.js'
+import NatPMP from './lib/pmp/index.js'
 
-class NatAPI {
+const debug = Debug('nat-api')
+
+export default class NatAPI {
   /**
   * opts:
   *  - ttl
@@ -26,29 +28,26 @@ class NatAPI {
     this._openPorts = []
     this._upnpIntervals = {}
     this._pmpIntervals = {}
+    this._pmpClient = null
+    this._upnpClient = null
 
     // Setup NAT-PMP Client
     this.enablePMP = opts.enablePMP !== false
     if (this.enablePMP) {
       try {
         // Lookup gateway IP
-        const results = defaultGateway.v4.sync()
-        this._pmpClient = NatPMP.connect(results.gateway)
+        const results = v4.sync()
+        this._pmpClient = new NatPMP(results.gateway)
       } catch (err) {
         debug('Could not find gateway IP for NAT-PMP', err)
         this._pmpClient = null
       }
-    } else {
-      // Not necessary - but good for readability
-      this._pmpClient = null
     }
 
     this.enableUPNP = opts.enableUPNP !== false
     if (this.enableUPNP) {
       // Setup UPnP Client
-      this._upnpClient = NatUPNP.createClient()
-    } else {
-      this._upnpClient = null
+      this._upnpClient = new NatUPNP()
     }
   }
 
@@ -71,27 +70,26 @@ class NatAPI {
       // UDP or TCP
       const response = await this._map(opts)
       if (!response[0]) return false
-      const newOpts = Object.assign({}, opts)
+      const newOpts = { ...opts }
       this._openPorts.push(newOpts)
-      return true
     } else {
       // UDP & TCP
 
       // Map UDP
-      const newOptsUDP = Object.assign({}, opts)
+      const newOptsUDP = { ...opts }
       newOptsUDP.protocol = 'UDP'
       let response = await this._map(newOptsUDP)
       if (!response[0]) return false
       this._openPorts.push(newOptsUDP)
 
       // Map TCP
-      const newOptsTCP = Object.assign({}, opts)
+      const newOptsTCP = { ...opts }
       newOptsTCP.protocol = 'TCP'
       response = await this._map(newOptsTCP)
       if (!response[0]) return false
       this._openPorts.push(newOptsTCP)
-      return true
     }
+    return true
   }
 
   /**
@@ -121,11 +119,11 @@ class NatAPI {
       return response[0]
     } else {
       // UDP & TCP
-      const newOptsUDP = Object.assign({}, opts)
+      const newOptsUDP = { ...opts }
       newOptsUDP.protocol = 'UDP'
       let response = await this._unmap(newOptsUDP)
       if (!response[0]) return false
-      const newOptsTCP = Object.assign({}, opts)
+      const newOptsTCP = { ...opts }
       newOptsTCP.protocol = 'TCP'
       response = await this._unmap(newOptsTCP)
       if (!response[0]) return false
@@ -136,26 +134,8 @@ class NatAPI {
   async destroy () {
     if (this._destroyed) throw new Error('client already destroyed')
 
-    const continueDestroy = async () => {
-      this._destroyed = true
-
-      // Close NAT-PMP client
-      if (this._pmpClient) {
-        debug('Close PMP client')
-        await this._pmpClient.close()
-      }
-
-      // Close UPNP Client
-      if (this._upnpClient) {
-        debug('Close UPnP client')
-        await this._upnpClient.destroy()
-      }
-
-      return true
-    }
-
     // Unmap all ports
-    const openPortsCopy = Object.assign([], this._openPorts)
+    const openPortsCopy = [...this._openPorts]
 
     for (const openPort of openPortsCopy) {
       try {
@@ -165,7 +145,21 @@ class NatAPI {
       }
     }
 
-    return await continueDestroy()
+    this._destroyed = true
+
+    // Close NAT-PMP client
+    if (this._pmpClient) {
+      debug('Close PMP client')
+      await this._pmpClient.close()
+    }
+
+    // Close UPNP Client
+    if (this._upnpClient) {
+      debug('Close UPnP client')
+      await this._upnpClient.destroy()
+    }
+
+    return true
   }
 
   _validateInput (publicPort, privatePort) {
@@ -240,10 +234,8 @@ class NatAPI {
         if (ip) return ip
         debug('NAT-PMP getting public ip failed')
       }
-      return ''
-    } catch (err) {
-      return ''
-    }
+    } catch (err) {}
+    return ''
   }
 
   async _upnpIp () {
@@ -254,10 +246,8 @@ class NatAPI {
         if (ip) return ip
         debug('NAT-UPNP getting public ip failed')
       }
-      return ''
-    } catch (err) {
-      return ''
-    }
+    } catch (err) {}
+    return ''
   }
 
   async externalIp () {
@@ -275,10 +265,8 @@ class NatAPI {
         if (ip) return ip
         debug('getting public ip failed via NAT-UPNP')
       }
-      return ''
-    } catch (err) {
-      return ''
-    }
+    } catch (err) {}
+    return ''
   }
 
   async _unmap (opts) {
@@ -328,7 +316,7 @@ class NatAPI {
 
     if (this.autoUpdate) {
       this._upnpIntervals[opts.publicPort + ':' + opts.privatePort + '-' + opts.protocol] = setInterval(
-        this._upnpMap.bind(this, opts),
+        () => this._upnpMap(opts),
         this._timeout
       ).unref?.()
     }
@@ -349,7 +337,7 @@ class NatAPI {
 
     // If we come from a timeouted (or error) request, we need to reconnect
     if (this._pmpClient && this._pmpClient.socket == null) {
-      this._pmpClient = NatPMP.connect(this._pmpClient.gateway)
+      this._pmpClient = new NatPMP(this._pmpClient.gateway)
     }
 
     const pmpTimeout = new Promise((resolve, reject) => {
@@ -449,7 +437,7 @@ class NatAPI {
 
     // If we come from a timeouted (or error) request, we need to reconnect
     if (this._pmpClient && this._pmpClient.socket == null) {
-      this._pmpClient = NatPMP.connect(this._pmpClient.gateway)
+      this._pmpClient = new NatPMP(this._pmpClient.gateway)
     }
 
     const pmpTimeout = new Promise((resolve, reject) => {
@@ -507,5 +495,3 @@ class NatAPI {
     // TOOD: check port
   }
 }
-
-module.exports = NatAPI
