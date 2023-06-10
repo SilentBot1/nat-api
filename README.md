@@ -23,6 +23,8 @@ const NatAPI = require('nat-api')
 // For NAT-PMP + NAT-UPNP, use:
 const client = new NatAPI({ enablePMP: true, enableUPNP: true })
 
+// Note: upnpPermanentFallback is disabled by default, meaning leases on routers which only support UPnP permanent leases will fail, this includes RouterOS/Mikrotik, Netgear, and other ISP provided routers. 
+
 // Map public port 1000 to private port 1000 with UDP and TCP
 client.map(1000).then(() => {
   console.log('Port mapped!')
@@ -79,8 +81,9 @@ If `opts` is specified, then the default options (shown below) will be overridde
   ttl: 1200, // Time to live of each port mapping in seconds (default: 1200)
   autoUpdate: true, // Refresh all the port mapping to keep them from expiring (default: true)
   gateway: '192.168.1.1', // Default gateway (default: null)
-  enablePMP: false // Enable PMP (default: true)
-  enableUPNP: false // Enable UPNP (default: true)
+  enablePMP: false, // Enable PMP (default: true)
+  enableUPNP: false, // Enable UPNP (default: true)
+  upnpPermanentFallback: false // Enable UPNP permanent leases fallback (default: false)
 }
 ```
 

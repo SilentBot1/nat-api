@@ -15,6 +15,7 @@ export default class NatAPI {
   *  - autoUpdate
   *  - enablePMP (default = false)
   *  - enableUPNP (default = false)
+  *  - upnpPermanentFallback (default = false)
   **/
   constructor (opts = {}) {
     // TTL is 2 hours (min 20 min)
