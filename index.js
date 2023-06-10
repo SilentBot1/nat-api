@@ -14,6 +14,7 @@ export default class NatAPI {
   *  - gateway
   *  - autoUpdate
   *  - enablePMP (default = false)
+  *  - enableUPNP (default = false)
   **/
   constructor (opts = {}) {
     // TTL is 2 hours (min 20 min)
@@ -21,6 +22,7 @@ export default class NatAPI {
     this.description = opts.description || 'NatAPI'
     this.gateway = opts.gateway || null
     this.autoUpdate = opts.autoUpdate !== false
+    this.upnpPermanentFallback = opts.upnpPermanentFallback || false
 
     // Refresh the mapping 10 minutes before the end of its lifetime
     this._timeout = (this.ttl - 600) * 1000
@@ -47,7 +49,7 @@ export default class NatAPI {
     this.enableUPNP = opts.enableUPNP !== false
     if (this.enableUPNP) {
       // Setup UPnP Client
-      this._upnpClient = new NatUPNP()
+      this._upnpClient = new NatUPNP({ permanentFallback: this.upnpPermanentFallback })
     }
   }
 
