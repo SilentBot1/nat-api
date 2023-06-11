@@ -74,7 +74,14 @@ export default class NatAPI {
       const newOpts = { ...opts }
       this._openPorts.push(newOpts)
       const response = await this._map(opts)
-      if (!response[0]) return false
+      if (!response[0]) {
+        arrayRemove(this._openPorts, this._openPorts.findIndex((o) => {
+          return (o.publicPort === opts.publicPort) &&
+            (o.privatePort === opts.privatePort) &&
+            (o.protocol === opts.protocol || opts.protocol == null)
+        }))
+        return false
+      }
     } else {
       // UDP & TCP
 
@@ -83,14 +90,28 @@ export default class NatAPI {
       newOptsUDP.protocol = 'UDP'
       this._openPorts.push(newOptsUDP)
       let response = await this._map(newOptsUDP)
-      if (!response[0]) return false
+      if (!response[0]) {
+        arrayRemove(this._openPorts, this._openPorts.findIndex((o) => {
+          return (o.publicPort === newOptsUDP.publicPort) &&
+            (o.privatePort === newOptsUDP.privatePort) &&
+            (o.protocol === newOptsUDP.protocol || newOptsUDP.protocol == null)
+        }))
+        return false
+      }
 
       // Map TCP
       const newOptsTCP = { ...opts }
       newOptsTCP.protocol = 'TCP'
       this._openPorts.push(newOptsTCP)
       response = await this._map(newOptsTCP)
-      if (!response[0]) return false
+      if (!response[0]) {
+        arrayRemove(this._openPorts, this._openPorts.findIndex((o) => {
+          return (o.publicPort === newOptsTCP.publicPort) &&
+            (o.privatePort === newOptsTCP.privatePort) &&
+            (o.protocol === newOptsTCP.protocol || newOptsTCP.protocol == null)
+        }))
+        return false
+      }
     }
     return true
   }
