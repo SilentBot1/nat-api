@@ -71,26 +71,26 @@ export default class NatAPI {
 
     if (opts.protocol) {
       // UDP or TCP
-      const response = await this._map(opts)
-      if (!response[0]) return false
       const newOpts = { ...opts }
       this._openPorts.push(newOpts)
+      const response = await this._map(opts)
+      if (!response[0]) return false
     } else {
       // UDP & TCP
 
       // Map UDP
       const newOptsUDP = { ...opts }
       newOptsUDP.protocol = 'UDP'
+      this._openPorts.push(newOptsUDP)
       let response = await this._map(newOptsUDP)
       if (!response[0]) return false
-      this._openPorts.push(newOptsUDP)
 
       // Map TCP
       const newOptsTCP = { ...opts }
       newOptsTCP.protocol = 'TCP'
+      this._openPorts.push(newOptsTCP)
       response = await this._map(newOptsTCP)
       if (!response[0]) return false
-      this._openPorts.push(newOptsTCP)
     }
     return true
   }
