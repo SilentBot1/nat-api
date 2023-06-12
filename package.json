@@ -4,6 +4,10 @@
   "description": "Port mapping with UPnP and NAT-PMP",
   "main": "index.js",
   "type": "module",
+  "chromeapp": {
+    "default-gateway": false,
+    "./lib/pmp/index.js": false
+  },
   "scripts": {
     "test": "standard"
   },

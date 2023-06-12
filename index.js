@@ -36,7 +36,7 @@ export default class NatAPI {
 
     // Setup NAT-PMP Client
     this.enablePMP = opts.enablePMP !== false
-    if (this.enablePMP) {
+    if (this.enablePMP && typeof v4 === 'function') {
       try {
         // Lookup gateway IP
         const results = v4.sync()
@@ -75,11 +75,7 @@ export default class NatAPI {
       this._openPorts.push(newOpts)
       const response = await this._map(opts)
       if (!response[0]) {
-        arrayRemove(this._openPorts, this._openPorts.findIndex((o) => {
-          return (o.publicPort === opts.publicPort) &&
-            (o.privatePort === opts.privatePort) &&
-            (o.protocol === opts.protocol || opts.protocol == null)
-        }))
+        arrayRemove(this._openPorts, this._openPorts.indexOf(newOpts))
         return false
       }
     } else {
@@ -91,11 +87,7 @@ export default class NatAPI {
       this._openPorts.push(newOptsUDP)
       let response = await this._map(newOptsUDP)
       if (!response[0]) {
-        arrayRemove(this._openPorts, this._openPorts.findIndex((o) => {
-          return (o.publicPort === newOptsUDP.publicPort) &&
-            (o.privatePort === newOptsUDP.privatePort) &&
-            (o.protocol === newOptsUDP.protocol || newOptsUDP.protocol == null)
-        }))
+        arrayRemove(this._openPorts, this._openPorts.indexOf(newOptsUDP))
         return false
       }
 
