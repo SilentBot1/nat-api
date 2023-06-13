@@ -6,6 +6,7 @@
   "type": "module",
   "chromeapp": {
     "default-gateway": false,
+    "dgram": "chrome-dgram",
     "./lib/pmp/index.js": false
   },
   "scripts": {
@@ -16,6 +17,7 @@
   },
   "dependencies": {
     "cross-fetch-ponyfill": "^1.0.3",
+    "chrome-dgram": "^3.0.6",
     "debug": "^4.3.4",
     "default-gateway": "^6.0.3",
     "unordered-array-remove": "^1.0.2",
