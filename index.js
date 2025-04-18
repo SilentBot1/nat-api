@@ -1,5 +1,5 @@
 import arrayRemove from 'unordered-array-remove'
-import { v4 } from 'default-gateway'
+import { gateway4sync as v4 } from 'default-gateway'
 import Debug from 'debug'
 import NatUPNP from './lib/upnp/index.js'
 import NatPMP from './lib/pmp/index.js'
@@ -39,7 +39,7 @@ export default class NatAPI {
     if (this.enablePMP && typeof v4 === 'function') {
       try {
         // Lookup gateway IP
-        const results = v4.sync()
+        const results = v4()
         this._pmpClient = new NatPMP(results.gateway)
       } catch (err) {
         debug('Could not find gateway IP for NAT-PMP', err)
