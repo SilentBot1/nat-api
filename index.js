@@ -236,7 +236,6 @@ export default class NatAPI {
       if (this._pmpClient) {
         const pmpTimeout = new Promise((resolve, reject) => {
           setTimeout(() => {
-            this._pmpClient.close()
             const err = new Error('timeout')
             debug(
               'Error getting external ip using NAT-PMP:',
@@ -358,7 +357,6 @@ export default class NatAPI {
 
     const pmpTimeout = new Promise((resolve, reject) => {
       setTimeout(() => {
-        this._pmpClient.close()
         const err = new Error('timeout')
         reject(err)
       }, 1000).unref?.()
@@ -375,7 +373,6 @@ export default class NatAPI {
         pmpTimeout
       ])
     } catch (err) {
-      this._pmpClient.close()
       debug(
         'Error mapping port %d:%d using NAT-PMP:',
         opts.publicPort,
@@ -458,7 +455,6 @@ export default class NatAPI {
 
     const pmpTimeout = new Promise((resolve, reject) => {
       setTimeout(() => {
-        this._pmpClient.close()
         const err = new Error('timeout')
         debug(
           'Error unmapping port %d:%d using NAT-PMP:',
@@ -480,7 +476,6 @@ export default class NatAPI {
         pmpTimeout
       ])
     } catch (err) {
-      this._pmpClient.close()
       debug(
         'Error unmapping port %d:%d using NAT-PMP:',
         opts.publicPort,
